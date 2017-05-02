@@ -9,18 +9,22 @@ import (
 	"golang.org/x/oauth2/google"
 	"io/ioutil"
 	"context"
+	"github.com/pressly/chi"
+	"github.com/pressly/chi/middleware"
+	"github.com/pressly/chi/render"
 )
 
 var (
 	oauthConf = &oauth2.Config{
 		ClientID:     "1046962736770-0ss7chk20buubrhpmp6i3hlpj6c3fi6g.apps.googleusercontent.com",
 		ClientSecret: "oez3UDoAEWAfBkS6r5CD4Rmm",
-		RedirectURL:  "http://localhost:3000/oauth2/",
+		RedirectURL:  "http://localhost:3000/oauth2",
 		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile",
 							   "https://www.googleapis.com/auth/userinfo.email"},
 		Endpoint:     google.Endpoint,
 	}
 	oauthStateString = "thisshouldberandom"
+
 )
 
 const htmlIndex = `<html><body>
@@ -30,6 +34,7 @@ Login in with <a href="/login">Google</a>
 
 func handleMain(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Printf("oauth state, '%s'\n", "wtf")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(htmlIndex))
 }
@@ -41,12 +46,13 @@ func handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
 
 func handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 	state := r.FormValue("state")
+	fmt.Printf("oauth state, '%s'\n", state)
+
 	if state != oauthStateString {
 		fmt.Printf("invalid oauth state, expected '%s', got '%s'\n", oauthStateString, state)
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
-	fmt.Printf("oauth state, '%s'\n", state)
 
 	code := r.FormValue("code")
 	fmt.Printf("oauth code, '%s'\n", code)
@@ -80,12 +86,23 @@ func handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("parseResponseBody: %s\n", string(result))
 
-	http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+	//http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 }
 
 func main() {
-	http.HandleFunc("/", handleMain)
-	http.HandleFunc("/login", handleGoogleLogin)
-	http.HandleFunc("/oauth2", handleGoogleCallback)
-	log.Fatal(http.ListenAndServe(":3000", nil))
+	router := chi.NewRouter()
+
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+	router.Use(render.SetContentType(render.ContentTypeJSON))
+
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("I am root"))
+	})
+
+	router.Get("/login", handleGoogleLogin)
+	router.Get("/oauth2", handleGoogleCallback)
+
+	http.ListenAndServe(":3000", router)
 }
