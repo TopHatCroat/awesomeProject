@@ -12,6 +12,8 @@ import (
 	"github.com/pressly/chi"
 	"github.com/pressly/chi/middleware"
 	"github.com/pressly/chi/render"
+	e "github.com/TopHatCroat/awesomeProject/helpers"
+	"errors"
 )
 
 var (
@@ -99,6 +101,15 @@ func main() {
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("I am root"))
+	})
+
+	router.Get("/error", func(rw http.ResponseWriter, req *http.Request)  {
+		render.Render(rw, req, &e.ErrResponse{
+			Err: errors.New("Example error"),
+			HTTPStatusCode: 200,
+			StatusText: "Success",
+			ErrorText:  "Example error",
+		})
 	})
 
 	router.Get("/login", handleGoogleLogin)
