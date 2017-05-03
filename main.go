@@ -3,17 +3,18 @@ package main
 import (
 	"fmt"
 	//"io/ioutil"
-	"golang.org/x/oauth2"
-	"log"
-	"net/http"
-	"golang.org/x/oauth2/google"
-	"io/ioutil"
 	"context"
+	"errors"
+	h "github.com/TopHatCroat/awesomeProject/helpers"
 	"github.com/pressly/chi"
 	"github.com/pressly/chi/middleware"
 	"github.com/pressly/chi/render"
-	e "github.com/TopHatCroat/awesomeProject/helpers"
-	"errors"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"github.com/TopHatCroat/awesomeProject/points"
 )
 
 var (
@@ -21,12 +22,11 @@ var (
 		ClientID:     "1046962736770-0ss7chk20buubrhpmp6i3hlpj6c3fi6g.apps.googleusercontent.com",
 		ClientSecret: "oez3UDoAEWAfBkS6r5CD4Rmm",
 		RedirectURL:  "http://localhost:3000/oauth2",
-		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.profile",
-							   "https://www.googleapis.com/auth/userinfo.email"},
-		Endpoint:     google.Endpoint,
+		Scopes: []string{"https://www.googleapis.com/auth/userinfo.profile",
+			"https://www.googleapis.com/auth/userinfo.email"},
+		Endpoint: google.Endpoint,
 	}
 	oauthStateString = "thisshouldberandom"
-
 )
 
 const htmlIndex = `<html><body>
@@ -103,13 +103,18 @@ func main() {
 		w.Write([]byte("I am root"))
 	})
 
-	router.Get("/error", func(rw http.ResponseWriter, req *http.Request)  {
-		render.Render(rw, req, &e.ErrResponse{
-			Err: errors.New("Example error"),
+	router.Get("/error", func(rw http.ResponseWriter, req *http.Request) {
+		render.Render(rw, req, &h.ErrResponse{
+			Err:            errors.New("Example error"),
 			HTTPStatusCode: 200,
-			StatusText: "Success",
-			ErrorText:  "Example error",
+			StatusText:     "Success",
+			ErrorText:      "Example error",
 		})
+	})
+
+	router.Route("/points", func(router chi.Router) {
+		router.Get("/", points.List)
+		router.Post("/", points.Create)
 	})
 
 	router.Get("/login", handleGoogleLogin)
