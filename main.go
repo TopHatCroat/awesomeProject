@@ -14,7 +14,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"github.com/TopHatCroat/awesomeProject/points"
+	"github.com/TopHatCroat/awesomeProject/models"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
 var (
@@ -27,6 +29,8 @@ var (
 		Endpoint: google.Endpoint,
 	}
 	oauthStateString = "thisshouldberandom"
+
+	db *gorm.DB
 )
 
 const htmlIndex = `<html><body>
@@ -92,6 +96,15 @@ func handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	db, err := gorm.Open("sqlite3", "test.db")
+	if err != nil {
+		panic("failed to connect database")
+	}
+	defer db.Close()
+
+	// Migrate the schema
+	db.AutoMigrate(&models.Point{})
+
 	router := chi.NewRouter()
 
 	router.Use(middleware.RequestID)
@@ -113,12 +126,19 @@ func main() {
 	})
 
 	router.Route("/points", func(router chi.Router) {
-		router.Get("/", points.List)
-		router.Post("/", points.Create)
+		router.With(DBConn).Get("/", models.List)
+		router.With(DBConn).Post("/", models.Create)
 	})
 
 	router.Get("/login", handleGoogleLogin)
 	router.Get("/oauth2", handleGoogleCallback)
 
 	http.ListenAndServe(":3000", router)
+}
+
+func DBConn(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), "db", db)
+		handler.ServeHTTP(rw, r.WithContext(ctx))
+	})
 }

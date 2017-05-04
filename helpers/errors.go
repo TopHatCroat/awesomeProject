@@ -22,7 +22,7 @@ func ErrInvalidRequest(err error) render.Renderer {
 	return &ErrResponse{
 		Err:            err,
 		HTTPStatusCode: 400,
-		StatusText:     "Invalid request.",
+		StatusText:     "You fucked up",
 		ErrorText:      err.Error(),
 	}
 }
@@ -37,3 +37,4 @@ func ErrRender(err error) render.Renderer {
 }
 
 var ErrNotFound = &ErrResponse{HTTPStatusCode: 404, StatusText: "Resource not found."}
+var ErrServer = &ErrResponse{HTTPStatusCode: 500, StatusText: "I fucked up"}
