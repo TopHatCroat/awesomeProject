@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
-	//"io/ioutil"
 	"context"
 	"errors"
 	h "github.com/TopHatCroat/awesomeProject/helpers"
+	"github.com/TopHatCroat/awesomeProject/models"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/pressly/chi"
 	"github.com/pressly/chi/middleware"
 	"github.com/pressly/chi/render"
@@ -14,9 +16,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"github.com/TopHatCroat/awesomeProject/models"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
 var (
@@ -96,10 +95,7 @@ func handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	db, err := gorm.Open("sqlite3", "test.db")
-	if err != nil {
-		panic("failed to connect database")
-	}
+	db, _ = gorm.Open("postgres", "host=127.0.0.1 port=5432 user=postgres dbname=postgres sslmode=disable password=postgres123")
 	defer db.Close()
 
 	// Migrate the schema

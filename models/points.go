@@ -2,10 +2,10 @@ package models
 
 import (
 	h "github.com/TopHatCroat/awesomeProject/helpers"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/pressly/chi/render"
 	"net/http"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
 )
 
 type Point struct {
@@ -34,8 +34,8 @@ func List(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	points := []Point{}
-	db.Find(points)
+	var points = []*Point{}
+	db.Find(&points)
 
 	if err := render.RenderList(rw, req, NewPointListResponse(points)); err != nil {
 		render.Render(rw, req, h.ErrRender(err))
@@ -43,10 +43,10 @@ func List(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func NewPointListResponse(points []Point) []render.Renderer {
+func NewPointListResponse(points []*Point) []render.Renderer {
 	list := []render.Renderer{}
 	for _, point := range points {
-		list = append(list, NewPointResponse(&point))
+		list = append(list, NewPointResponse(point))
 	}
 	return list
 }
