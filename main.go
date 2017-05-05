@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"context"
 	"errors"
+	"fmt"
 	h "github.com/TopHatCroat/awesomeProject/helpers"
 	"github.com/TopHatCroat/awesomeProject/models"
 	"github.com/jinzhu/gorm"
@@ -98,8 +98,7 @@ func main() {
 	db, _ = gorm.Open("postgres", "host=127.0.0.1 port=5432 user=postgres dbname=postgres sslmode=disable password=postgres123")
 	defer db.Close()
 
-	// Migrate the schema
-	db.AutoMigrate(&models.Point{})
+	db.AutoMigrate(&models.Point{}, &models.User{})
 
 	router := chi.NewRouter()
 
@@ -124,6 +123,11 @@ func main() {
 	router.Route("/points", func(router chi.Router) {
 		router.With(DBConn).Get("/", models.List)
 		router.With(DBConn).Post("/", models.Create)
+	})
+
+	router.Route("/users", func(r chi.Router) {
+		r.With(DBConn).Post("/", models.CreateUser)
+		r.With(DBConn).Get("/", models.ListUsers)
 	})
 
 	router.Get("/login", handleGoogleLogin)
