@@ -98,7 +98,7 @@ func main() {
 	db, _ = gorm.Open("postgres", "host=127.0.0.1 port=5432 user=postgres dbname=postgres sslmode=disable password=postgres123")
 	defer db.Close()
 
-	db.AutoMigrate(&models.Point{}, &models.User{})
+	db.AutoMigrate(&models.Point{}, &models.User{}, &models.Session{})
 
 	router := chi.NewRouter()
 
@@ -129,6 +129,8 @@ func main() {
 		r.With(DBConn).Post("/", models.CreateUser)
 		r.With(DBConn).Get("/", models.ListUsers)
 	})
+
+	router.With(DBConn).Post("/login", models.LoginUser)
 
 	router.Get("/login", handleGoogleLogin)
 	router.Get("/oauth2", handleGoogleCallback)

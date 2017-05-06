@@ -11,7 +11,7 @@ import (
 )
 
 type User struct {
-	Id         int    `json:"id"`
+	gorm.Model
 	Email      string `json:"email"`
 	PassDigest []byte `json:"-"`
 }
@@ -43,8 +43,6 @@ func (u *NewUserRequest) Bind(r *http.Request) error {
 	if passRx.MatchString(u.Password) != true {
 		return errors.New("Password not valid")
 	}
-
-	u.Id = 0
 
 	return nil
 }
