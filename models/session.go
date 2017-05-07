@@ -58,17 +58,11 @@ func (lr *LoginResponse) Render(rw http.ResponseWriter, req *http.Request) error
 	return nil
 }
 
-func LoginUser(rw http.ResponseWriter, req *http.Request) {
+func (e *Env) LoginUser(rw http.ResponseWriter, req *http.Request) {
 	data := &LoginRequest{}
 
 	if err := render.Bind(req, data); err != nil {
 		render.Render(rw, req, helpers.ErrInvalidRequest(err))
-		return
-	}
-
-	db, ok := req.Context().Value("db").(*gorm.DB)
-	if ok != true {
-		render.Render(rw, req, helpers.ErrServer)
 		return
 	}
 
@@ -77,7 +71,7 @@ func LoginUser(rw http.ResponseWriter, req *http.Request) {
 	passDigest := h.Sum(nil)
 
 	var user User
-	db.Where(&User{Email: data.Email, PassDigest: passDigest}).First(&user)
+	e.DB.Where(&User{Email: data.Email, PassDigest: passDigest}).First(&user)
 
 	if user.Email == "" {
 		render.Render(rw, req, helpers.ErrNotFound)
@@ -90,7 +84,11 @@ func LoginUser(rw http.ResponseWriter, req *http.Request) {
 		UserId:     user.ID,
 	}
 
-	db.Create(&session)
+	e.DB.Create(&session)
+	if e.DB.Error != nil {
+		render.Render(rw, req, helpers.ErrRender(e.DB.Error))
+		return
+	}
 
 	render.Status(req, http.StatusCreated)
 	render.Render(rw, req, &LoginResponse{Token: session.Token})
@@ -114,12 +112,12 @@ func generateToken(s int) string {
 	return base64.URLEncoding.EncodeToString(b)
 }
 
-func GoogleLogin(w http.ResponseWriter, r *http.Request) {
+func (e *Env) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 	url := oauthConf.AuthCodeURL(oauthStateString)
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-func GoogleCallback(w http.ResponseWriter, r *http.Request) {
+func (e *Env) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	state := r.FormValue("state")
 	fmt.Printf("oauth state, '%s'\n", state)
 
@@ -140,7 +138,7 @@ func GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	render.Render(w, r, &LoginResponse{Token: token.AccessToken})
 }
 
-func GOAuthLogin(w http.ResponseWriter, r *http.Request) {
+func (e *Env) GOAuthLogin(w http.ResponseWriter, r *http.Request) {
 	data := &LoginRequest{}
 
 	if err := render.Bind(r, data); err != nil {
@@ -170,18 +168,12 @@ func GOAuthLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, ok := r.Context().Value("db").(*gorm.DB)
-	if ok != true {
-		render.Render(w, r, helpers.ErrServer)
-		return
-	}
-
 	user := User{}
-	db.Where(&User{Email: string(gdata["email"].(string))}).First(&user)
+	e.DB.Where(&User{Email: string(gdata["email"].(string))}).First(&user)
 
 	if user.Email == "" {
 		user.Email = string(gdata["email"].(string))
-		db.Create(&user)
+		e.DB.Create(&user)
 	}
 
 	session := &Session{
@@ -190,7 +182,11 @@ func GOAuthLogin(w http.ResponseWriter, r *http.Request) {
 		UserId:     user.ID,
 	}
 
-	db = db.Create(&session)
+	e.DB.Create(&session)
+	if e.DB.Error != nil {
+		render.Render(w, r, helpers.ErrRender(e.DB.Error))
+		return
+	}
 
 	render.Status(r, http.StatusCreated)
 	render.Render(w, r, &LoginResponse{Token: session.Token})

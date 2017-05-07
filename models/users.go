@@ -47,7 +47,7 @@ func (u *NewUserRequest) Bind(r *http.Request) error {
 	return nil
 }
 
-func CreateUser(rw http.ResponseWriter, req *http.Request) {
+func (e *Env) CreateUser(rw http.ResponseWriter, req *http.Request) {
 	data := &NewUserRequest{}
 
 	if err := render.Bind(req, data); err != nil {
@@ -73,7 +73,7 @@ func CreateUser(rw http.ResponseWriter, req *http.Request) {
 	render.Render(rw, req, helpers.CreateSuccess)
 }
 
-func ListUsers(rw http.ResponseWriter, req *http.Request) {
+func (e *Env) ListUsers(rw http.ResponseWriter, req *http.Request) {
 	db, ok := req.Context().Value("db").(*gorm.DB)
 	if ok != true {
 		render.Render(rw, req, helpers.ErrServer)

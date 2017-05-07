@@ -2,7 +2,6 @@ package models
 
 import (
 	h "github.com/TopHatCroat/awesomeProject/helpers"
-	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/pressly/chi/render"
 	"net/http"
@@ -27,15 +26,9 @@ type PointResponse struct {
 	*Point
 }
 
-func List(rw http.ResponseWriter, req *http.Request) {
-	db, ok := req.Context().Value("db").(*gorm.DB)
-	if ok == false {
-		render.Render(rw, req, h.ErrServer)
-		return
-	}
-
+func (e *Env) List(rw http.ResponseWriter, req *http.Request) {
 	var points = []*Point{}
-	db.Find(&points)
+	e.DB.Find(&points)
 
 	if err := render.RenderList(rw, req, NewPointListResponse(points)); err != nil {
 		render.Render(rw, req, h.ErrRender(err))
@@ -51,7 +44,7 @@ func NewPointListResponse(points []*Point) []render.Renderer {
 	return list
 }
 
-func Create(rw http.ResponseWriter, req *http.Request) {
+func (e *Env) Create(rw http.ResponseWriter, req *http.Request) {
 	data := &PointRequest{}
 
 	if err := render.Bind(req, data); err != nil {
@@ -59,13 +52,7 @@ func Create(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	db, ok := req.Context().Value("db").(*gorm.DB)
-	if ok == false {
-		render.Render(rw, req, h.ErrServer)
-		return
-	}
-
-	db.Create(data.Point)
+	e.DB.Create(data.Point)
 
 	render.Status(req, http.StatusCreated)
 	render.Render(rw, req, NewPointResponse(data.Point))

@@ -1,9 +1,7 @@
 package main
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	h "github.com/TopHatCroat/awesomeProject/helpers"
 	"github.com/TopHatCroat/awesomeProject/models"
 	"github.com/jinzhu/gorm"
@@ -18,18 +16,6 @@ var (
 	db *gorm.DB
 )
 
-const htmlIndex = `<html><body>
-Login in with <a href="/login">Google</a>
-</body></html>
-`
-
-func handleMain(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Printf("oauth state, '%s'\n", "wtf")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(htmlIndex))
-}
-
 func main() {
 	var err error
 	db, err = gorm.Open("postgres", "host=127.0.0.1 port=5432 user=postgres dbname=postgres sslmode=disable password=postgres123")
@@ -39,6 +25,8 @@ func main() {
 	defer db.Close()
 
 	db.AutoMigrate(&models.Point{}, &models.User{}, &models.Session{})
+
+	e := models.Env{DB: db}
 
 	router := chi.NewRouter()
 
@@ -61,27 +49,27 @@ func main() {
 	})
 
 	router.Route("/points", func(router chi.Router) {
-		router.With(DBConn).Get("/", models.List)
-		router.With(DBConn).Post("/", models.Create)
+		router.Get("/", e.List)
+		router.Post("/", e.Create)
 	})
 
 	router.Route("/users", func(r chi.Router) {
-		r.With(DBConn).Post("/", models.CreateUser)
-		r.With(DBConn).Get("/", models.ListUsers)
+		r.Post("/", e.CreateUser)
+		r.Get("/", e.ListUsers)
 	})
 
-	router.With(DBConn).Post("/login", models.LoginUser)
+	router.Post("/login", e.LoginUser)
 
-	router.Get("/googleLogin", models.GoogleLogin)
-	router.Get("/oauth2", models.GoogleCallback)
-	router.With(DBConn).Post("/glogin", models.GOAuthLogin)
+	router.Get("/googleLogin", e.GoogleLogin)
+	router.Get("/oauth2", e.GoogleCallback)
+	router.Post("/glogin", e.GOAuthLogin)
 
 	http.ListenAndServe(":3000", router)
 }
 
-func DBConn(handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		ctx := context.WithValue(r.Context(), "db", db)
-		handler.ServeHTTP(rw, r.WithContext(ctx))
-	})
-}
+//func DBConn(handler http.Handler) http.Handler {
+//	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+//		ctx := context.WithValue(r.Context(), "db", db)
+//		handler.ServeHTTP(rw, r.WithContext(ctx))
+//	})
+//}
