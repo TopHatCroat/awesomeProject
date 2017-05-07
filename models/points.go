@@ -52,7 +52,10 @@ func (e *Env) Create(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	e.DB.Create(data.Point)
+	if err := e.DB.Create(data.Point).Error; err != nil {
+		render.Render(rw, req, h.ErrRender(err))
+		return
+	}
 
 	render.Status(req, http.StatusCreated)
 	render.Render(rw, req, NewPointResponse(data.Point))

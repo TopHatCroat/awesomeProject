@@ -84,9 +84,8 @@ func (e *Env) LoginUser(rw http.ResponseWriter, req *http.Request) {
 		UserId:     user.ID,
 	}
 
-	e.DB.Create(&session)
-	if e.DB.Error != nil {
-		render.Render(rw, req, helpers.ErrRender(e.DB.Error))
+	if err := e.DB.Create(&session).Error; err != nil {
+		render.Render(rw, req, helpers.ErrRender(err))
 		return
 	}
 
@@ -173,7 +172,10 @@ func (e *Env) GOAuthLogin(w http.ResponseWriter, r *http.Request) {
 
 	if user.Email == "" {
 		user.Email = string(gdata["email"].(string))
-		e.DB.Create(&user)
+		if err := e.DB.Create(&user).Error; err != nil {
+			render.Render(w, r, helpers.ErrRender(err))
+			return
+		}
 	}
 
 	session := &Session{
@@ -182,13 +184,11 @@ func (e *Env) GOAuthLogin(w http.ResponseWriter, r *http.Request) {
 		UserId:     user.ID,
 	}
 
-	e.DB.Create(&session)
-	if e.DB.Error != nil {
-		render.Render(w, r, helpers.ErrRender(e.DB.Error))
+	if err := e.DB.Create(&session).Error; err != nil {
+		render.Render(w, r, helpers.ErrRender(err))
 		return
 	}
 
 	render.Status(r, http.StatusCreated)
 	render.Render(w, r, &LoginResponse{Token: session.Token})
-
 }

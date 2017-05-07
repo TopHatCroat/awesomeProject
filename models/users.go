@@ -61,27 +61,18 @@ func (e *Env) CreateUser(rw http.ResponseWriter, req *http.Request) {
 	h.Sum([]byte(data.Password))
 	user.PassDigest = h.Sum(nil)
 
-	db, ok := req.Context().Value("db").(*gorm.DB)
-	if ok != true {
-		render.Render(rw, req, helpers.ErrServer)
+	if err := e.DB.Create(&user).Error; err != nil {
+		render.Render(rw, req, helpers.ErrRender(err))
 		return
 	}
-
-	db.Create(&user)
 
 	render.Status(req, http.StatusCreated)
 	render.Render(rw, req, helpers.CreateSuccess)
 }
 
 func (e *Env) ListUsers(rw http.ResponseWriter, req *http.Request) {
-	db, ok := req.Context().Value("db").(*gorm.DB)
-	if ok != true {
-		render.Render(rw, req, helpers.ErrServer)
-		return
-	}
-
 	var users = []*User{}
-	db.Find(&users)
+	e.DB.Find(&users)
 
 	if err := render.RenderList(rw, req, NewUserListReponse(users)); err != nil {
 		render.Render(rw, req, helpers.ErrServer)
