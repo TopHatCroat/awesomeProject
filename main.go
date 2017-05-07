@@ -11,24 +11,10 @@ import (
 	"github.com/pressly/chi"
 	"github.com/pressly/chi/middleware"
 	"github.com/pressly/chi/render"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
-	"io/ioutil"
-	"log"
 	"net/http"
 )
 
 var (
-	oauthConf = &oauth2.Config{
-		ClientID:     "1046962736770-0ss7chk20buubrhpmp6i3hlpj6c3fi6g.apps.googleusercontent.com",
-		ClientSecret: "oez3UDoAEWAfBkS6r5CD4Rmm",
-		RedirectURL:  "http://localhost:3000/oauth2",
-		Scopes: []string{"https://www.googleapis.com/auth/userinfo.profile",
-			"https://www.googleapis.com/auth/userinfo.email"},
-		Endpoint: google.Endpoint,
-	}
-	oauthStateString = "thisshouldberandom"
-
 	db *gorm.DB
 )
 
@@ -44,58 +30,12 @@ func handleMain(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(htmlIndex))
 }
 
-func handleGoogleLogin(w http.ResponseWriter, r *http.Request) {
-	url := oauthConf.AuthCodeURL(oauthStateString)
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-}
-
-func handleGoogleCallback(w http.ResponseWriter, r *http.Request) {
-	state := r.FormValue("state")
-	fmt.Printf("oauth state, '%s'\n", state)
-
-	if state != oauthStateString {
-		fmt.Printf("invalid oauth state, expected '%s', got '%s'\n", oauthStateString, state)
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		return
-	}
-
-	code := r.FormValue("code")
-	fmt.Printf("oauth code, '%s'\n", code)
-
-	token, err := oauthConf.Exchange(context.TODO(), code)
-	if err != nil {
-		fmt.Printf("oauthConf.Exchange() failed with '%s'\n", err)
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		return
-	}
-	//
-	//resp, err := http.Get("https://graph.facebook.com/me?access_token=" +
-	//	url.QueryEscape(token.AccessToken))
-	fmt.Printf("token, '%s'\n", token)
-
-	response, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + token.AccessToken)
-
-	if err != nil {
-		fmt.Printf("Get: %s\n", err)
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		return
-	}
-	defer response.Body.Close()
-
-	result, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		fmt.Printf("ReadAll: %s\n", err)
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-		return
-	}
-
-	log.Printf("parseResponseBody: %s\n", string(result))
-
-	//http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
-}
-
 func main() {
-	db, _ = gorm.Open("postgres", "host=127.0.0.1 port=5432 user=postgres dbname=postgres sslmode=disable password=postgres123")
+	var err error
+	db, err = gorm.Open("postgres", "host=127.0.0.1 port=5432 user=postgres dbname=postgres sslmode=disable password=postgres123")
+	if err != nil {
+		panic(err)
+	}
 	defer db.Close()
 
 	db.AutoMigrate(&models.Point{}, &models.User{}, &models.Session{})
@@ -132,8 +72,9 @@ func main() {
 
 	router.With(DBConn).Post("/login", models.LoginUser)
 
-	router.Get("/login", handleGoogleLogin)
-	router.Get("/oauth2", handleGoogleCallback)
+	router.Get("/googleLogin", models.GoogleLogin)
+	router.Get("/oauth2", models.GoogleCallback)
+	router.With(DBConn).Post("/glogin", models.GOAuthLogin)
 
 	http.ListenAndServe(":3000", router)
 }
