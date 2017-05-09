@@ -50,7 +50,7 @@ func main() {
 
 	router.Route("/points", func(router chi.Router) {
 		router.Get("/", e.List)
-		router.Post("/", e.Create)
+		router.With(e.Authenticate).Post("/", e.Create)
 	})
 
 	router.Route("/users", func(r chi.Router) {

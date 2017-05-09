@@ -38,3 +38,4 @@ func ErrRender(err error) render.Renderer {
 
 var ErrNotFound = &ErrResponse{HTTPStatusCode: 404, StatusText: "Resource not found."}
 var ErrServer = &ErrResponse{HTTPStatusCode: 500, StatusText: "I fucked up"}
+var ErrAuth = &ErrResponse{HTTPStatusCode: 401, StatusText: "Unauthorized"}

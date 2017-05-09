@@ -42,6 +42,10 @@ type Session struct {
 type LoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	TokenAuth
+}
+
+type TokenAuth struct {
 	Token    string `json:"token"`
 }
 
@@ -110,6 +114,34 @@ func generateToken(s int) string {
 	}
 	return base64.URLEncoding.EncodeToString(b)
 }
+
+func (e *Env) Authenticate(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("Authorization")
+		if auth == "" {
+			render.Render(rw, r, helpers.ErrAuth)
+			return
+		}
+
+		ses := Session{}
+
+		if ok := e.DB.Where(&Session{Token: auth}).First(&ses).RecordNotFound(); ok == true {
+			render.Render(rw, r, helpers.ErrAuth)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "user", ses.User)
+
+		handler.ServeHTTP(rw, r.WithContext(ctx))
+	})
+}
+
+//func DBConn(handler http.Handler) http.Handler {
+//	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+//		ctx := context.WithValue(r.Context(), "db", db)
+//		handler.ServeHTTP(rw, r.WithContext(ctx))
+//	})
+//}
 
 func (e *Env) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 	url := oauthConf.AuthCodeURL(oauthStateString)

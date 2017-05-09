@@ -5,16 +5,18 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/pressly/chi/render"
 	"net/http"
+	"github.com/TopHatCroat/awesomeProject/fcm"
 )
 
 type Point struct {
 	Id        int     `json:"id"`
-	Longitude float32 `json:"log"`
+	Longitude float32 `json:"lon"`
 	Latitude  float32 `json:"lat"`
 }
 
 type PointRequest struct {
 	*Point
+	TokenAuth
 }
 
 func (p *PointRequest) Bind(r *http.Request) error {
@@ -56,6 +58,8 @@ func (e *Env) Create(rw http.ResponseWriter, req *http.Request) {
 		render.Render(rw, req, h.ErrRender(err))
 		return
 	}
+
+	fcm.PushNotification("Point created: " + string(data.Point.Id), "")
 
 	render.Status(req, http.StatusCreated)
 	render.Render(rw, req, NewPointResponse(data.Point))

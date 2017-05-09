@@ -26,6 +26,10 @@ type UserRespose struct {
 }
 
 func (u *NewUserRequest) Bind(r *http.Request) error {
+	if u.User == nil {
+		return errors.New("Invalid request")
+	}
+
 	nameRx, err := regexp.Compile("^\\S+@\\S+\\.\\S+$")
 	if err != nil {
 		return err
