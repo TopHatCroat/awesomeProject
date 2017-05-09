@@ -71,7 +71,7 @@ func (e *Env) CreateUser(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	render.Status(req, http.StatusCreated)
-	render.Render(rw, req, helpers.CreateSuccess)
+	render.Render(rw, req, helpers.SucCreate)
 }
 
 func (e *Env) ListUsers(rw http.ResponseWriter, req *http.Request) {

@@ -51,6 +51,13 @@ func main() {
 	router.Route("/points", func(router chi.Router) {
 		router.Get("/", e.List)
 		router.With(e.Authenticate).Post("/", e.Create)
+
+		router.Route("/:id", func(r chi.Router) {
+			r.Use(e.PointCtx)
+			r.Get("/", e.GetPoint)
+			r.With(e.Authenticate).Put("/", e.UpdatePoint)
+			r.With(e.Authenticate).Delete("/", e.DeletePoint)
+		})
 	})
 
 	router.Route("/users", func(r chi.Router) {

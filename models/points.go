@@ -1,12 +1,15 @@
 package models
 
 import (
+	"context"
 	"fmt"
 	h "github.com/TopHatCroat/awesomeProject/helpers"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/pressly/chi"
 	"github.com/pressly/chi/render"
 	"net/http"
+	"strconv"
 )
 
 type Point struct {
@@ -14,7 +17,7 @@ type Point struct {
 	Longitude float32 `json:"lon"`
 	Latitude  float32 `json:"lat"`
 	user      User
-	UserID    uint
+	UserID    uint `json:"userId"`
 }
 
 type PointRequest struct {
@@ -28,7 +31,11 @@ func (p *PointRequest) Bind(r *http.Request) error {
 
 type PointResponse struct {
 	*Point
-	Id uint `json:"id"`
+}
+
+func (rd *PointResponse) Render(w http.ResponseWriter, r *http.Request) error {
+	// Pre-processing before a response is marshalled and sent across the wire
+	return nil
 }
 
 func (e *Env) List(rw http.ResponseWriter, req *http.Request) {
@@ -39,14 +46,6 @@ func (e *Env) List(rw http.ResponseWriter, req *http.Request) {
 		render.Render(rw, req, h.ErrRender(err))
 		return
 	}
-}
-
-func NewPointListResponse(points []*Point) []render.Renderer {
-	list := []render.Renderer{}
-	for _, point := range points {
-		list = append(list, NewPointResponse(point))
-	}
-	return list
 }
 
 func (e *Env) Create(rw http.ResponseWriter, req *http.Request) {
@@ -66,6 +65,7 @@ func (e *Env) Create(rw http.ResponseWriter, req *http.Request) {
 
 	data.Point.user = *user
 	data.Point.UserID = user.ID
+	data.Point.ID = 0
 
 	if err := e.DB.Create(data.Point).Error; err != nil {
 		render.Render(rw, req, h.ErrRender(err))
@@ -78,13 +78,74 @@ func (e *Env) Create(rw http.ResponseWriter, req *http.Request) {
 	render.Render(rw, req, NewPointResponse(data.Point))
 }
 
-func NewPointResponse(p *Point) *PointResponse {
-	resp := &PointResponse{Id: p.ID}
-	return resp
+func (e *Env) GetPoint(w http.ResponseWriter, r *http.Request) {
+	point := r.Context().Value("point").(*Point)
+
+	if err := render.Render(w, r, NewPointResponse(point)); err != nil {
+		render.Render(w, r, h.ErrRender(err))
+		return
+	}
 }
 
-func (rd *PointResponse) Render(w http.ResponseWriter, r *http.Request) error {
-	// Pre-processing before a response is marshalled and sent across the wire
+func (e *Env) UpdatePoint(w http.ResponseWriter, r *http.Request) {
+	point := r.Context().Value("point").(*Point)
 
-	return nil
+	p := &PointRequest{Point: point}
+	if err := render.Bind(r, p); err != nil {
+		render.Render(w, r, h.ErrInvalidRequest(err))
+		return
+	}
+
+	if err := e.DB.Model(point).Update(map[string]interface{}{"longitude": p.Longitude, "latitude": p.Latitude}).Error; err != nil {
+		render.Render(w, r, h.ErrRender(err))
+		return
+	}
+
+	if err := render.Render(w, r, NewPointResponse(point)); err != nil {
+		render.Render(w, r, h.ErrRender(err))
+		return
+	}
+}
+
+func (e *Env) DeletePoint(w http.ResponseWriter, r *http.Request) {
+	point := r.Context().Value("point").(*Point)
+
+	if err := e.DB.Delete(point).Error; err != nil {
+		render.Render(w, r, h.ErrInvalidRequest(err))
+		return
+	}
+
+	render.Render(w, r, h.SucDelete)
+}
+
+func (e *Env) PointCtx(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		pointId, err := strconv.Atoi(chi.URLParam(r, "id"))
+		if err != nil {
+			render.Render(w, r, h.ErrRender(err))
+			return
+		}
+
+		point := Point{}
+		if err := e.DB.First(&point, pointId).Error; err != nil {
+			render.Render(w, r, h.ErrNotFound)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "point", &point)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func NewPointListResponse(points []*Point) []render.Renderer {
+	list := []render.Renderer{}
+	for _, point := range points {
+		list = append(list, NewPointResponse(point))
+	}
+	return list
+}
+
+func NewPointResponse(p *Point) *PointResponse {
+	resp := &PointResponse{Point: p}
+	return resp
 }
