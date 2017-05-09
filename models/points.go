@@ -1,22 +1,24 @@
 package models
 
 import (
+	"fmt"
 	h "github.com/TopHatCroat/awesomeProject/helpers"
+	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/pressly/chi/render"
 	"net/http"
-	"github.com/TopHatCroat/awesomeProject/fcm"
 )
 
 type Point struct {
-	Id        int     `json:"id"`
+	gorm.Model
 	Longitude float32 `json:"lon"`
 	Latitude  float32 `json:"lat"`
+	user      User
+	UserID    uint
 }
 
 type PointRequest struct {
 	*Point
-	TokenAuth
 }
 
 func (p *PointRequest) Bind(r *http.Request) error {
@@ -26,6 +28,7 @@ func (p *PointRequest) Bind(r *http.Request) error {
 
 type PointResponse struct {
 	*Point
+	Id uint `json:"id"`
 }
 
 func (e *Env) List(rw http.ResponseWriter, req *http.Request) {
@@ -54,19 +57,29 @@ func (e *Env) Create(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	user, ok := req.Context().Value("user").(*User)
+	fmt.Printf("%s %s", user, ok)
+	if ok != true {
+		render.Render(rw, req, h.ErrServer)
+		return
+	}
+
+	data.Point.user = *user
+	data.Point.UserID = user.ID
+
 	if err := e.DB.Create(data.Point).Error; err != nil {
 		render.Render(rw, req, h.ErrRender(err))
 		return
 	}
 
-	fcm.PushNotification("Point created: " + string(data.Point.Id), "")
+	//fcm.PushNotification("Point created: " + string(data.Point), "")
 
 	render.Status(req, http.StatusCreated)
 	render.Render(rw, req, NewPointResponse(data.Point))
 }
 
 func NewPointResponse(p *Point) *PointResponse {
-	resp := &PointResponse{Point: p}
+	resp := &PointResponse{Id: p.ID}
 	return resp
 }
 

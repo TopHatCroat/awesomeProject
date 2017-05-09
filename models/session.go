@@ -36,7 +36,7 @@ type Session struct {
 	Token      string
 	LastUsedAt int64
 	User       User
-	UserId     uint
+	UserID     uint
 }
 
 type LoginRequest struct {
@@ -46,7 +46,7 @@ type LoginRequest struct {
 }
 
 type TokenAuth struct {
-	Token    string `json:"token"`
+	Token string `json:"token"`
 }
 
 func (u *LoginRequest) Bind(r *http.Request) error {
@@ -85,7 +85,7 @@ func (e *Env) LoginUser(rw http.ResponseWriter, req *http.Request) {
 	session := &Session{
 		Token:      generateToken(64),
 		LastUsedAt: time.Now().UnixNano(),
-		UserId:     user.ID,
+		UserID:     user.ID,
 	}
 
 	if err := e.DB.Create(&session).Error; err != nil {
@@ -125,12 +125,12 @@ func (e *Env) Authenticate(handler http.Handler) http.Handler {
 
 		ses := Session{}
 
-		if ok := e.DB.Where(&Session{Token: auth}).First(&ses).RecordNotFound(); ok == true {
+		if ok := e.DB.Where(&Session{Token: auth}).Preload("User").First(&ses).RecordNotFound(); ok == true {
 			render.Render(rw, r, helpers.ErrAuth)
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "user", ses.User)
+		ctx := context.WithValue(r.Context(), "user", &ses.User)
 
 		handler.ServeHTTP(rw, r.WithContext(ctx))
 	})
@@ -213,7 +213,7 @@ func (e *Env) GOAuthLogin(w http.ResponseWriter, r *http.Request) {
 	session := &Session{
 		Token:      data.Token,
 		LastUsedAt: time.Now().UnixNano(),
-		UserId:     user.ID,
+		UserID:     user.ID,
 	}
 
 	if err := e.DB.Create(&session).Error; err != nil {
