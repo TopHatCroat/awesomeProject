@@ -10,13 +10,19 @@ import (
 	"github.com/pressly/chi/middleware"
 	"github.com/pressly/chi/render"
 	"net/http"
+	"net/http/httputil"
+	"fmt"
+	"github.com/pressly/chi/docgen"
+	"flag"
 )
 
 var (
 	db *gorm.DB
+	genRoutes = flag.Bool("routes", false, "Generate router documentation")
 )
 
 func main() {
+	flag.Parse()
 	var err error
 	db, err = gorm.Open("postgres", "host=127.0.0.1 port=5432 user=postgres dbname=postgres sslmode=disable password=postgres123")
 	if err != nil {
@@ -24,6 +30,7 @@ func main() {
 	}
 	defer db.Close()
 
+	db.LogMode(true)
 	db.AutoMigrate(&models.Point{}, &models.User{}, &models.Session{})
 
 	e := models.Env{DB: db}
@@ -36,6 +43,20 @@ func main() {
 	router.Use(render.SetContentType(render.ContentTypeJSON))
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		request, err := httputil.DumpRequest(r, true)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("%s \n", request)
+		w.Write([]byte("I am root"))
+	})
+
+	router.Post("/", func(w http.ResponseWriter, r *http.Request) {
+		request, err := httputil.DumpRequest(r, true)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("%s \n", request)
 		w.Write([]byte("I am root"))
 	})
 
@@ -63,6 +84,11 @@ func main() {
 	router.Route("/users", func(r chi.Router) {
 		r.Post("/", e.CreateUser)
 		r.Get("/", e.ListUsers)
+
+		r.With(e.Authenticate).Route("/:id", func( r2 chi.Router) {
+			r2.Use(e.UserCtx)
+			r2.Post("/fcm", e.RegisterFCM)
+		})
 	})
 
 	router.Post("/login", e.LoginUser)
@@ -70,6 +96,15 @@ func main() {
 	router.Get("/googleLogin", e.GoogleLogin)
 	router.Get("/oauth2", e.GoogleCallback)
 	router.Post("/glogin", e.GOAuthLogin)
+
+	if *genRoutes {
+		// fmt.Println(docgen.JSONRoutesDoc(r))
+		fmt.Println(docgen.MarkdownRoutesDoc(router, docgen.MarkdownOpts{
+			ProjectPath: "github.com/TopHatCroat/awesomeProject",
+			Intro:       "Awesome generated docs.",
+		}))
+		return
+	}
 
 	http.ListenAndServe(":3000", router)
 }

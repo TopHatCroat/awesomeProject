@@ -72,7 +72,9 @@ func (e *Env) Create(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//fcm.PushNotification("Point created: " + string(data.Point), "")
+	if user.Fcm != "" {
+		user.PushPointNotification(*data.Point)
+	}
 
 	render.Status(req, http.StatusCreated)
 	render.Render(rw, req, NewPointResponse(data.Point))
