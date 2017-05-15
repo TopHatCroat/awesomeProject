@@ -2,22 +2,22 @@ package main
 
 import (
 	"errors"
+	"flag"
+	"fmt"
 	h "github.com/TopHatCroat/awesomeProject/helpers"
 	"github.com/TopHatCroat/awesomeProject/models"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/pressly/chi"
+	"github.com/pressly/chi/docgen"
 	"github.com/pressly/chi/middleware"
 	"github.com/pressly/chi/render"
 	"net/http"
 	"net/http/httputil"
-	"fmt"
-	"github.com/pressly/chi/docgen"
-	"flag"
 )
 
 var (
-	db *gorm.DB
+	db        *gorm.DB
 	genRoutes = flag.Bool("routes", false, "Generate router documentation")
 )
 
@@ -92,7 +92,7 @@ func main() {
 		r.Post("/", e.CreateUser)
 		r.Get("/", e.ListUsers)
 
-		r.With(e.Authenticate).Route("/:id", func( r2 chi.Router) {
+		r.With(e.Authenticate).Route("/:id", func(r2 chi.Router) {
 			r2.Use(e.UserCtx)
 			r2.Post("/fcm", e.RegisterFCM)
 		})

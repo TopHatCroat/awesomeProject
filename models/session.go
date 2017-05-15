@@ -8,8 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/TopHatCroat/awesomeProject/helpers"
-	"github.com/jinzhu/gorm"
+	h "github.com/TopHatCroat/awesomeProject/helpers"
 	"github.com/pressly/chi/render"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -32,7 +31,7 @@ var (
 )
 
 type Session struct {
-	gorm.Model
+	h.Model
 	Token      string
 	LastUsedAt int64
 	User       User
@@ -66,19 +65,19 @@ func (e *Env) LoginUser(rw http.ResponseWriter, req *http.Request) {
 	data := &LoginRequest{}
 
 	if err := render.Bind(req, data); err != nil {
-		render.Render(rw, req, helpers.ErrInvalidRequest(err))
+		render.Render(rw, req, h.ErrInvalidRequest(err))
 		return
 	}
 
-	h := sha512.New()
-	h.Sum([]byte(data.Password))
-	passDigest := h.Sum(nil)
+	hash := sha512.New()
+	hash.Sum([]byte(data.Password))
+	passDigest := hash.Sum(nil)
 
 	var user User
 	e.DB.Where(&User{Email: data.Email, PassDigest: passDigest}).First(&user)
 
 	if user.Email == "" {
-		render.Render(rw, req, helpers.ErrNotFound)
+		render.Render(rw, req, h.ErrNotFound)
 		return
 	}
 
@@ -89,7 +88,7 @@ func (e *Env) LoginUser(rw http.ResponseWriter, req *http.Request) {
 	}
 
 	if err := e.DB.Create(&session).Error; err != nil {
-		render.Render(rw, req, helpers.ErrRender(err))
+		render.Render(rw, req, h.ErrRender(err))
 		return
 	}
 
@@ -119,14 +118,14 @@ func (e *Env) Authenticate(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		auth := r.Header.Get("Authorization")
 		if auth == "" {
-			render.Render(rw, r, helpers.ErrAuth)
+			render.Render(rw, r, h.ErrAuth)
 			return
 		}
 
 		ses := Session{}
 
 		if ok := e.DB.Where(&Session{Token: auth}).Preload("User").First(&ses).RecordNotFound(); ok == true {
-			render.Render(rw, r, helpers.ErrAuth)
+			render.Render(rw, r, h.ErrAuth)
 			return
 		}
 
@@ -153,7 +152,7 @@ func (e *Env) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("oauth state, '%s'\n", state)
 
 	if state != oauthStateString {
-		render.Render(w, r, helpers.ErrRender(errors.New("Invalid oauth state")))
+		render.Render(w, r, h.ErrRender(errors.New("Invalid oauth state")))
 		return
 	}
 
@@ -162,7 +161,7 @@ func (e *Env) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 
 	token, err := oauthConf.Exchange(context.TODO(), code)
 	if err != nil {
-		render.Render(w, r, helpers.ErrRender(err))
+		render.Render(w, r, h.ErrRender(err))
 		return
 	}
 
@@ -173,21 +172,21 @@ func (e *Env) GOAuthLogin(w http.ResponseWriter, r *http.Request) {
 	data := &LoginRequest{}
 
 	if err := render.Bind(r, data); err != nil {
-		render.Render(w, r, helpers.ErrInvalidRequest(err))
+		render.Render(w, r, h.ErrInvalidRequest(err))
 		return
 	}
 
 	response, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + data.Token)
 
 	if err != nil {
-		render.Render(w, r, helpers.ErrRender(err))
+		render.Render(w, r, h.ErrRender(err))
 		return
 	}
 	defer response.Body.Close()
 
 	result, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		render.Render(w, r, helpers.ErrRender(err))
+		render.Render(w, r, h.ErrRender(err))
 		return
 	}
 	log.Printf("parseResponseBody: %s\n", string(result))
@@ -195,7 +194,7 @@ func (e *Env) GOAuthLogin(w http.ResponseWriter, r *http.Request) {
 	gdata := make(map[string]interface{})
 	err = json.Unmarshal(result, &gdata)
 	if err != nil {
-		render.Render(w, r, helpers.ErrRender(err))
+		render.Render(w, r, h.ErrRender(err))
 		return
 	}
 
@@ -205,7 +204,7 @@ func (e *Env) GOAuthLogin(w http.ResponseWriter, r *http.Request) {
 	if user.Email == "" {
 		user.Email = string(gdata["email"].(string))
 		if err := e.DB.Create(&user).Error; err != nil {
-			render.Render(w, r, helpers.ErrRender(err))
+			render.Render(w, r, h.ErrRender(err))
 			return
 		}
 	}
@@ -217,7 +216,7 @@ func (e *Env) GOAuthLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := e.DB.Create(&session).Error; err != nil {
-		render.Render(w, r, helpers.ErrRender(err))
+		render.Render(w, r, h.ErrRender(err))
 		return
 	}
 

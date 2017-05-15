@@ -1,23 +1,22 @@
 package models
 
 import (
+	"context"
 	"crypto/sha512"
 	"errors"
+	"fmt"
+	"github.com/TopHatCroat/awesomeProject/fcm"
 	h "github.com/TopHatCroat/awesomeProject/helpers"
-	"github.com/jinzhu/gorm"
+	"github.com/mattermost/gcm"
+	"github.com/pressly/chi"
 	"github.com/pressly/chi/render"
 	"net/http"
 	"regexp"
-	"fmt"
-	"github.com/mattermost/gcm"
-	"github.com/TopHatCroat/awesomeProject/fcm"
 	"strconv"
-	"github.com/pressly/chi"
-	"context"
 )
 
 type User struct {
-	gorm.Model
+	h.Model
 	Email      string `json:"email"`
 	PassDigest []byte `json:"-"`
 	Fcm        string

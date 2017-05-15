@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	h "github.com/TopHatCroat/awesomeProject/helpers"
-	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/pressly/chi"
 	"github.com/pressly/chi/render"
@@ -13,11 +12,11 @@ import (
 )
 
 type Point struct {
-	gorm.Model
+	h.Model
 	Longitude float32 `json:"lon"`
 	Latitude  float32 `json:"lat"`
 	user      User
-	UserID    uint `json:"userId"`
+	UserID    uint `json:"user_id"`
 }
 
 type PointRequest struct {
