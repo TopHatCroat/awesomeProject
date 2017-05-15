@@ -21,6 +21,13 @@ var (
 	genRoutes = flag.Bool("routes", false, "Generate router documentation")
 )
 
+func init() {
+	render.Respond = func(w http.ResponseWriter, r *http.Request, v interface{}) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		render.DefaultResponder(w, r, v)
+	}
+}
+
 func main() {
 	flag.Parse()
 	var err error

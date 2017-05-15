@@ -24,8 +24,7 @@ type PointRequest struct {
 	*Point
 }
 
-func (p *PointRequest) Bind(r *http.Request) error {
-	// just a post-process after a decode..
+func (PointRequest) Bind(r *http.Request) error {
 	return nil
 }
 
