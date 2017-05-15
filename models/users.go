@@ -19,7 +19,7 @@ type User struct {
 	h.Model
 	Email      string `json:"email"`
 	PassDigest []byte `json:"-"`
-	Fcm        string
+	Fcm        string `json:"fcm"`
 }
 
 type NewUserRequest struct {
