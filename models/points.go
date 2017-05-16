@@ -36,7 +36,7 @@ func (rd *PointResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (e *Env) List(rw http.ResponseWriter, req *http.Request) {
+func (e *Env) ListPoints(rw http.ResponseWriter, req *http.Request) {
 	var points = []*Point{}
 	e.DB.Find(&points)
 
@@ -46,7 +46,7 @@ func (e *Env) List(rw http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (e *Env) Create(rw http.ResponseWriter, req *http.Request) {
+func (e *Env) CreatePoint(rw http.ResponseWriter, req *http.Request) {
 	data := &PointRequest{}
 
 	if err := render.Bind(req, data); err != nil {

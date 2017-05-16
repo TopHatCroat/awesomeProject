@@ -28,8 +28,6 @@ func init() {
 		if r.Method == "OPTIONS" {
 
 		}
-
-
 		render.DefaultResponder(w, r, v)
 	}
 }
@@ -44,7 +42,7 @@ func main() {
 	defer db.Close()
 
 	db.LogMode(true)
-	db.AutoMigrate(&models.Point{}, &models.User{}, &models.Session{})
+	db.AutoMigrate(&models.Point{}, &models.User{}, &models.Session{}, &models.Polygon{})
 
 	e := models.Env{DB: db}
 
@@ -84,15 +82,23 @@ func main() {
 	})
 
 	router.Route("/points", func(router chi.Router) {
-		router.Get("/", e.List)
+		router.Get("/", e.ListPoints)
 		//router.Options("/", Dummy)
-		router.With(e.Authenticate).Post("/", e.Create)
+		router.With(e.Authenticate).Post("/", e.CreatePoint)
 
 		router.Route("/:id", func(r chi.Router) {
 			r.Use(e.PointCtx)
 			r.Get("/", e.GetPoint)
 			r.With(e.Authenticate).Put("/", e.UpdatePoint)
 			r.With(e.Authenticate).Delete("/", e.DeletePoint)
+		})
+	})
+
+	router.With(e.Authenticate).Route("/polygons", func(r chi.Router) {
+		r.Post("/", e.CreatePolygon)
+		r.Route("/:id", func(r2 chi.Router) {
+			r2.Use(e.PolygonCtx)
+			r2.Get("/", e.GetPolygon)
 		})
 	})
 
