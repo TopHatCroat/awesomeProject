@@ -98,6 +98,15 @@ func main() {
 		})
 	})
 
+	router.With(e.Authenticate).Route("/geo", func(r chi.Router) {
+		r.Post("/", e.CreateArea)
+		r.Get("/", e.GetListArea)
+		r.Route("/:id", func(r2 chi.Router) {
+			r2.Use(e.PolygonCtx)
+			r2.Get("/", e.GetPolygon)
+		})
+	})
+
 	router.With(e.Authenticate).Route("/polygons", func(r chi.Router) {
 		r.Post("/", e.CreatePolygon)
 		r.Route("/:id", func(r2 chi.Router) {

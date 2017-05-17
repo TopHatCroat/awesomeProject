@@ -13,8 +13,8 @@ import (
 
 type Point struct {
 	h.Model
-	Longitude float32 `json:"lon"`
-	Latitude  float32 `json:"lat"`
+	Longitude float64 `json:"lon"`
+	Latitude  float64 `json:"lat"`
 	user      User
 	UserID    uint `json:"user_id"`
 }
