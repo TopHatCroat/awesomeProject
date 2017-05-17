@@ -49,6 +49,8 @@ func (e *Env) CreatePolygon(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	e.PolygonAdd <- *data.Polygon
+
 	render.Status(r, http.StatusCreated)
 	render.Render(w, r, h.SucCreate)
 }

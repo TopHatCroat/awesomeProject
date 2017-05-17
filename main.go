@@ -14,6 +14,7 @@ import (
 	"github.com/pressly/chi/render"
 	"net/http"
 	"net/http/httputil"
+	c "github.com/TopHatCroat/awesomeProject/control"
 )
 
 var (
@@ -44,7 +45,10 @@ func main() {
 	db.LogMode(true)
 	db.AutoMigrate(&models.Point{}, &models.User{}, &models.Session{}, &models.Polygon{})
 
-	e := models.Env{DB: db}
+	e := models.NewEnviroment(db)
+
+	go c.InitDanger(e)
+	go c.DangerProcessing(e)
 
 	router := chi.NewRouter()
 
