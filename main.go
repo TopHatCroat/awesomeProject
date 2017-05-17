@@ -101,9 +101,10 @@ func main() {
 	router.With(e.Authenticate).Route("/geo", func(r chi.Router) {
 		r.Post("/", e.CreateArea)
 		r.Get("/", e.GetListArea)
+		r.Get("/check", e.CheckPointArea)
 		r.Route("/:id", func(r2 chi.Router) {
-			r2.Use(e.PolygonCtx)
-			r2.Get("/", e.GetPolygon)
+			r2.Use(e.AreaCtx)
+			r2.Get("/", e.GetArea)
 		})
 	})
 
