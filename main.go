@@ -64,6 +64,7 @@ func main() {
 	router.Use(middleware.RequestID)
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
+	router.Use(ReqLogger)
 	router.Use(OptionsAllowed)
 	router.Use(render.SetContentType(render.ContentTypeJSON))
 
@@ -139,6 +140,9 @@ func main() {
 	filesDir := filepath.Join(workDir, "imgs")
 	router.FileServer("/imgs", http.Dir(filesDir))
 
+	logDir := filepath.Join(workDir, "l")
+	router.FileServer("/logs", http.Dir(logDir))
+
 	if *genRoutes {
 		// fmt.Println(docgen.JSONRoutesDoc(r))
 		fmt.Println(docgen.MarkdownRoutesDoc(router, docgen.MarkdownOpts{
@@ -158,6 +162,17 @@ func OptionsAllowed(handler http.Handler) http.Handler {
 			w.Header().Set("Content-Type", "httpd/unix-directory")
 			return
 		}
+
+		handler.ServeHTTP(w, r)
+	})
+}
+func ReqLogger(handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		request, err := httputil.DumpRequest(r, true)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("%s \n", request)
 
 		handler.ServeHTTP(w, r)
 	})
