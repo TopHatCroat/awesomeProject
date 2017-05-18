@@ -140,7 +140,7 @@ func main() {
 	filesDir := filepath.Join(workDir, "imgs")
 	router.FileServer("/imgs", http.Dir(filesDir))
 
-	logDir := filepath.Join(workDir, "l")
+	logDir := filepath.Join(workDir, "logs")
 	router.FileServer("/logs", http.Dir(logDir))
 
 	if *genRoutes {
