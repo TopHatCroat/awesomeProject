@@ -16,4 +16,5 @@ func (sr *SuccessResponse) Render(rw http.ResponseWriter, req *http.Request) err
 }
 
 var SucCreate = &SuccessResponse{HTTPStatusCode: 200, StatusText: "Resource created."}
+var SucUpdate = &SuccessResponse{HTTPStatusCode: 200, StatusText: "Resource updated."}
 var SucDelete = &SuccessResponse{HTTPStatusCode: 200, StatusText: "Resource deleted."}

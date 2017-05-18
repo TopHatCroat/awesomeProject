@@ -167,7 +167,7 @@ func (e *Env) RegisterFCM(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (u *User) PushPointNotification(point Point) {
-	data := map[string]interface{}{"msg": "Point created", "latitude": point.Latitude, "longitude": point.Longitude}
+	data := map[string]interface{}{"msg": "Point created", "latitude": point.Geo.Lat(), "longitude": point.Geo.Lng()}
 	regIDs := []string{u.Fcm}
 	gmsg := gcm.NewMessage(data, regIDs...)
 

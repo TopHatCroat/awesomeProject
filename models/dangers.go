@@ -63,10 +63,10 @@ func (e *Env) CreateArea(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pointsTest := ""
-
-	for _, point := range data.Points {
-		pointsTest += strconv.FormatFloat(point.Latitude, 'f', -1, 64) + " " + strconv.FormatFloat(point.Longitude, 'f', -1, 64) + ", "
-	}
+	//
+	//for _, point := range data.Points {
+	//	  pointsTest += strconv.FormatFloat(point.Latitude, 'f', -1, 64) + " " + strconv.FormatFloat(point.Longitude, 'f', -1, 64) + ", "
+	//}
 
 	pointsTest = strings.TrimRight(pointsTest, ", ")
 	strArray := strings.Split(pointsTest, ", ")
@@ -75,10 +75,11 @@ func (e *Env) CreateArea(w http.ResponseWriter, r *http.Request) {
 	polyInsert := "POLYGON((" + pointsTest + "))"
 
 	sql := "INSERT INTO dangers VALUES(default, ?, ST_PolygonFromText(?, 0))"
-	if err := e.DB.Exec(sql, data.Typ, polyInsert).Error; err != nil {
+	if err := e.DB.Exec(sql, data.ID, polyInsert).Error; err != nil {
 		render.Render(w, r, h.ErrRender(err))
 		return
 	}
+
 
 	render.Status(r, http.StatusCreated)
 	render.Render(w, r, h.SucCreate)
@@ -86,7 +87,6 @@ func (e *Env) CreateArea(w http.ResponseWriter, r *http.Request) {
 
 func (e *Env) GetListArea(w http.ResponseWriter, r *http.Request) {
 	var areas = []*Area{}
-	e.DB.Find(&areas)
 
 	rows, err := e.DB.Raw("SELECT id, typ, ST_AsBinary(geom) FROM dangers").Rows()
 	if err != nil {
@@ -100,7 +100,7 @@ func (e *Env) GetListArea(w http.ResponseWriter, r *http.Request) {
 		rows.Scan(&area.ID, &area.Typ, &p)
 
 		for i := 0; i < p.Length(); i++ {
-			area.Points = append(area.Points, Point{Latitude: p.GetAt(i).Lat(), Longitude: p.GetAt(i).Lng()})
+			//area.Points = append(area.Points, Point{Latitude: p.GetAt(i).Lat(), Longitude: p.GetAt(i).Lng()})
 		}
 
 		areas = append(areas, &area)
@@ -171,7 +171,7 @@ func (e *Env) AreaCtx(next http.Handler) http.Handler {
 			rows.Scan(&area.ID, &area.Typ, &p)
 
 			for i := 0; i < p.Length(); i++ {
-				area.Points = append(area.Points, Point{Latitude: p.GetAt(i).Lat(), Longitude: p.GetAt(i).Lng()})
+				//area.Points = append(area.Points, Point{Latitude: p.GetAt(i).Lat(), Longitude: p.GetAt(i).Lng()})
 			}
 
 		}

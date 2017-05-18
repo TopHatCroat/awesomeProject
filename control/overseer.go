@@ -1,7 +1,6 @@
 package control
 
 import (
-	"fmt"
 	m "github.com/TopHatCroat/awesomeProject/models"
 	"github.com/paulmach/go.geo"
 	"log"
@@ -18,17 +17,17 @@ func InitDanger(e *m.Env) {
 		panic(err)
 	}
 
-	for _, pol := range polys {
-		if err := e.DB.Model(&pol).Related(&pol.Points, "Points").Error; err != nil {
-			panic(err)
-		}
-	}
+	//for _, pol := range polys {
+	//	if err := e.DB.Model(&pol).Related(&pol.Points, "Points").Error; err != nil {
+	//		panic(err)
+	//	}
+	//}
 
 	dangers = polys
-
-	for _, poly := range dangers {
-		fmt.Printf("Added polygon %d %s \n", poly.ID, poly.Typ)
-	}
+	//
+	//for _, poly := range dangers {
+	//	fmt.Printf("Added polygon %d %s \n", poly.ID, poly.Typ)
+	//}
 }
 
 func DangerProcessing(e *m.Env) {
@@ -36,7 +35,7 @@ func DangerProcessing(e *m.Env) {
 		select {
 		case poly := <-e.PolygonAdd:
 			dangers = append(dangers, poly)
-			fmt.Printf("Added polygon %d %s \n", poly.ID, poly.Typ)
+			//fmt.Printf("Added polygon %d %s \n", poly.ID, poly.Typ)
 			return
 		}
 	}
