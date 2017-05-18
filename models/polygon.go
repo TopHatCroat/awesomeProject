@@ -13,12 +13,14 @@ import (
 
 type Polygon struct {
 	h.Model
-	Geo geo.PointSet `gorm:"-" json:"-"`
+	Color string       `json:"color"`
+	Geo   geo.PointSet `gorm:"-" json:"-"`
 }
 
 type PolygonRequest struct {
 	*Polygon
-	Border []BorderPoint `json:"polygon"`
+	ExtraColor string        `json:"color"`
+	Border     []BorderPoint `json:"polygon"`
 }
 
 func (PolygonRequest) Bind(r *http.Request) error {
@@ -54,8 +56,8 @@ func (e *Env) CreatePolygon(w http.ResponseWriter, r *http.Request) {
 		data.Geo.Push(&gp)
 	}
 
-	sql := "insert into polygons values(default, ?, ?, null, ST_PolygonFromText(?, 4326))"
-	if err := e.DB.Exec(sql, time.Now(), time.Now(), h.ToPolygonWKT(data.Geo)).Error; err != nil {
+	sql := "insert into polygons values(default, ?, ?, null, ST_PolygonFromText(?, 4326), ?)"
+	if err := e.DB.Exec(sql, time.Now(), time.Now(), h.ToPolygonWKT(data.Geo), data.ExtraColor).Error; err != nil {
 		render.Render(w, r, h.ErrRender(err))
 		return
 	}
@@ -70,7 +72,7 @@ func (e *Env) CreatePolygon(w http.ResponseWriter, r *http.Request) {
 func (e *Env) GetPolygonList(w http.ResponseWriter, r *http.Request) {
 	var polygons = []*Polygon{}
 
-	sql := "SELECT id, created_at, updated_at, ST_AsBinary(geom) FROM polygons WHERE deleted_at IS NULL"
+	sql := "SELECT id, created_at, updated_at, color, ST_AsBinary(geom) FROM polygons WHERE deleted_at IS NULL"
 	rows, err := e.DB.Raw(sql).Rows()
 	if err != nil {
 		render.Render(w, r, h.ErrRender(err))
@@ -79,7 +81,7 @@ func (e *Env) GetPolygonList(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var p Polygon
-		rows.Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt, &p.Geo)
+		rows.Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt, &p.Color, &p.Geo)
 
 		polygons = append(polygons, &p)
 	}
@@ -109,7 +111,7 @@ func (e *Env) PolygonCtx(next http.Handler) http.Handler {
 
 		p := Polygon{}
 
-		sql := "SELECT id, created_at, updated_at, ST_AsBinary(geom) FROM polygons WHERE id = ? AND deleted_at IS NULL"
+		sql := "SELECT id, created_at, updated_at, color, ST_AsBinary(geom) FROM polygons WHERE id = ? AND deleted_at IS NULL"
 		rows, err := e.DB.Raw(sql, pointId).Rows()
 		if err != nil {
 			render.Render(w, r, h.ErrRender(err))
@@ -118,7 +120,7 @@ func (e *Env) PolygonCtx(next http.Handler) http.Handler {
 
 		for rows.Next() {
 			//fmt.Printf("ERROR: %s",)
-			rows.Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt, &p.Geo)
+			rows.Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt, &p.Color, &p.Geo)
 		}
 
 		if p.ID == 0 {

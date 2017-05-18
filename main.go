@@ -28,13 +28,14 @@ var (
 func init() {
 	render.Respond = func(w http.ResponseWriter, r *http.Request, v interface{}) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 
 		render.DefaultResponder(w, r, v)
 	}
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
-	go func(){
+	go func() {
 		for sig := range c {
 			fmt.Printf("Recieved sig %s \n", sig.String())
 			os.Exit(0)
@@ -52,7 +53,7 @@ func main() {
 	defer db.Close()
 
 	db.LogMode(true)
-	db.AutoMigrate(&models.Point{}, &models.User{}, &models.Session{}, &models.Polygon{})
+	db.AutoMigrate(&models.Point{}, &models.User{}, &models.Session{}, &models.Polygon{}, &models.Image{})
 
 	e := models.NewEnviroment(db)
 
@@ -134,7 +135,10 @@ func main() {
 	router.Get("/oauth2", e.GoogleCallback)
 	router.Post("/glogin", e.GOAuthLogin)
 
-	router.Post("/imgs", e.ImageUpload)
+	router.With(e.Authenticate).Route("/images", func(r chi.Router) {
+		r.Post("/", e.ImageUpload)
+		r.Get("/", e.ListImages)
+	})
 
 	workDir, _ := os.Getwd()
 	filesDir := filepath.Join(workDir, "imgs")
@@ -154,11 +158,13 @@ func main() {
 
 	http.ListenAndServe(":3000", router)
 }
+
 func OptionsAllowed(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "OPTIONS" {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Access-Control-Allow-Methods", "GET,HEAD,POST,OPTIONS,PUT,DELETE")
+			w.Header().Set("Access-Control-Allow-Headers", "Authorization, Content-Type")
 			w.Header().Set("Content-Type", "httpd/unix-directory")
 			return
 		}
@@ -166,6 +172,7 @@ func OptionsAllowed(handler http.Handler) http.Handler {
 		handler.ServeHTTP(w, r)
 	})
 }
+
 func ReqLogger(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		request, err := httputil.DumpRequest(r, true)
