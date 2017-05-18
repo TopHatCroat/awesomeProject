@@ -23,4 +23,3 @@ func ToPolygonWKT(ps geo.PointSet) string {
 	buff.Write([]byte("))"))
 	return buff.String()
 }
-

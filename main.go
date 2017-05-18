@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	c "github.com/TopHatCroat/awesomeProject/control"
 	h "github.com/TopHatCroat/awesomeProject/helpers"
 	"github.com/TopHatCroat/awesomeProject/models"
 	"github.com/jinzhu/gorm"
@@ -14,7 +15,6 @@ import (
 	"github.com/pressly/chi/render"
 	"net/http"
 	"net/http/httputil"
-	c "github.com/TopHatCroat/awesomeProject/control"
 )
 
 var (
@@ -26,9 +26,6 @@ func init() {
 	render.Respond = func(w http.ResponseWriter, r *http.Request, v interface{}) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
-		if r.Method == "OPTIONS" {
-
-		}
 		render.DefaultResponder(w, r, v)
 	}
 }
@@ -95,16 +92,6 @@ func main() {
 			r.Get("/", e.GetPoint)
 			r.With(e.Authenticate).Put("/", e.UpdatePoint)
 			r.With(e.Authenticate).Delete("/", e.DeletePoint)
-		})
-	})
-
-	router.With(e.Authenticate).Route("/geo", func(r chi.Router) {
-		r.Post("/", e.CreateArea)
-		r.Get("/", e.GetListArea)
-		r.Get("/check", e.CheckPointArea)
-		r.Route("/:id", func(r2 chi.Router) {
-			r2.Use(e.AreaCtx)
-			r2.Get("/", e.GetArea)
 		})
 	})
 

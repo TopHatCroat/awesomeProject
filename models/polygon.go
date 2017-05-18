@@ -129,7 +129,6 @@ func (e *Env) PolygonCtx(next http.Handler) http.Handler {
 	})
 }
 
-
 func NewPolygonReponse(p *Polygon) *PolygonResponse {
 	resp := &PolygonResponse{Polygon: p}
 
@@ -161,8 +160,6 @@ func (e *Env) CheckPointInPoly(w http.ResponseWriter, r *http.Request) {
 		render.Render(w, r, h.ErrRender(err))
 		return
 	}
-
-
 
 	var response CheckResponse
 	response.Areas = make([]uint, 0)
