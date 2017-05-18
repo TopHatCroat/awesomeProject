@@ -70,7 +70,8 @@ func (e *Env) CreatePolygon(w http.ResponseWriter, r *http.Request) {
 func (e *Env) GetPolygonList(w http.ResponseWriter, r *http.Request) {
 	var polygons = []*Polygon{}
 
-	rows, err := e.DB.Raw("SELECT id, created_at, updated_at, ST_AsBinary(geom) FROM polygons").Rows()
+	sql := "SELECT id, created_at, updated_at, ST_AsBinary(geom) FROM polygons WHERE deleted_at IS NULL"
+	rows, err := e.DB.Raw(sql).Rows()
 	if err != nil {
 		render.Render(w, r, h.ErrRender(err))
 		return
@@ -108,7 +109,8 @@ func (e *Env) PolygonCtx(next http.Handler) http.Handler {
 
 		p := Polygon{}
 
-		rows, err := e.DB.Raw("SELECT id, created_at, updated_at, ST_AsBinary(geom) FROM polygons WHERE id = ?", pointId).Rows()
+		sql := "SELECT id, created_at, updated_at, ST_AsBinary(geom) FROM polygons WHERE id = ? AND deleted_at IS NULL"
+		rows, err := e.DB.Raw(sql, pointId).Rows()
 		if err != nil {
 			render.Render(w, r, h.ErrRender(err))
 			return
@@ -153,8 +155,7 @@ func (e *Env) CheckPointInPoly(w http.ResponseWriter, r *http.Request) {
 
 	geoPoint := "point(" + lon + " " + lat + ")"
 
-	sql := "select id, st_contains( geom, st_geomfromtext(?, 4326)) from polygons;"
-
+	sql := "select id, st_contains( geom, st_geomfromtext(?, 4326)) from polygons WHERE deleted_at IS NULL;"
 	rows, err := e.DB.Raw(sql, geoPoint).Rows()
 	if err != nil {
 		render.Render(w, r, h.ErrRender(err))

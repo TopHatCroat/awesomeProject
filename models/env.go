@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"errors"
 )
 
 type Env struct {
@@ -31,6 +32,11 @@ func (e *Env) ImageUpload(w http.ResponseWriter, r *http.Request) {
 	m := r.MultipartForm
 
 	files := m.File["img"]
+
+	if len(files) == 0 {
+		render.Render(w, r, h.ErrRender(errors.New("No file with name 'img'")))
+		return
+	}
 
 	for i, _ := range files {
 		//for each fileheader, get a handle to the actual file
@@ -68,3 +74,5 @@ func (e *Env) ImageUpload(w http.ResponseWriter, r *http.Request) {
 	render.Status(r, http.StatusCreated)
 	render.Render(w, r, h.SucCreate)
 }
+
+

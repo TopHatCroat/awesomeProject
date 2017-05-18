@@ -158,7 +158,7 @@ func OptionsAllowed(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "OPTIONS" {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Allow", "GET,HEAD,POST,OPTIONS,PUT,DELETE")
+			w.Header().Set("Access-Control-Allow-Methods", "GET,HEAD,POST,OPTIONS,PUT,DELETE")
 			w.Header().Set("Content-Type", "httpd/unix-directory")
 			return
 		}
