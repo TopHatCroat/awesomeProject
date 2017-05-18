@@ -81,7 +81,7 @@ func main() {
 			panic(err)
 		}
 		fmt.Printf("%s \n", request)
-		w.Write([]byte("I am Groot"))
+		w.Write([]byte("I am root"))
 	})
 
 	router.Get("/error", func(rw http.ResponseWriter, req *http.Request) {
