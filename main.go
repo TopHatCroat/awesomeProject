@@ -15,6 +15,8 @@ import (
 	"github.com/pressly/chi/render"
 	"net/http"
 	"net/http/httputil"
+	"os"
+	"os/signal"
 )
 
 var (
@@ -28,6 +30,15 @@ func init() {
 
 		render.DefaultResponder(w, r, v)
 	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func(){
+		for sig := range c {
+			fmt.Printf("Recieved sig %s \n", sig.String())
+			os.Exit(0)
+		}
+	}()
 }
 
 func main() {
@@ -70,7 +81,7 @@ func main() {
 			panic(err)
 		}
 		fmt.Printf("%s \n", request)
-		w.Write([]byte("I am root"))
+		w.Write([]byte("I am Groot"))
 	})
 
 	router.Get("/error", func(rw http.ResponseWriter, req *http.Request) {
