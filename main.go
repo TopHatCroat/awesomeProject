@@ -17,6 +17,7 @@ import (
 	"net/http/httputil"
 	"os"
 	"os/signal"
+	"path/filepath"
 )
 
 var (
@@ -131,6 +132,12 @@ func main() {
 	router.Get("/googleLogin", e.GoogleLogin)
 	router.Get("/oauth2", e.GoogleCallback)
 	router.Post("/glogin", e.GOAuthLogin)
+
+	router.Post("/imgs", e.ImageUpload)
+
+	workDir, _ := os.Getwd()
+	filesDir := filepath.Join(workDir, "imgs")
+	router.FileServer("/imgs", http.Dir(filesDir))
 
 	if *genRoutes {
 		// fmt.Println(docgen.JSONRoutesDoc(r))
